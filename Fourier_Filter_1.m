@@ -8,13 +8,13 @@ plot4 = true;  % Filtered data
 low_pass = false;
 close all
 
-datapoints = 500;
+datapoints = 100;
 tLim = 10; % (In Seconds)
 step = 1/datapoints;
 fps = datapoints/tLim;
 
 t = 0:step:tLim-step;
-x = sin(2*pi*2*t) + sin(2*pi*8*t) + sin(2*pi*50*t);
+x = sin(2*pi*2*t) + sin(2*pi*8*t);
 
 tlen = length(t);
 mirLen = 3*tlen;
@@ -149,15 +149,14 @@ function parameterTweaking()
 
         if low_pass
             sigmoidMir = [ fliplr(sigmoid), sigmoid ]; % High Pass
-            cutoff_Freq1 = f(length(sigmoid)-index) % From indexing
+            %cutoff_Freq1 = f(length(sigmoid)-index) % From indexing
             cutoff_Freq2 = max(fSig)-f_cutoff; % From closed form
             cutoff_Freq2 = abs(max(fSig)-f_cutoff); % From closed form
         else
             sigmoidMir = [ sigmoid, fliplr(sigmoid) ]; % Low Pass
-            cutoff_Freq1 = f(index);
-            cutoff_Freq2 = f_cutoff;
+            %cutoff_Freq1 = f(index); % From indexing
+            cutoff_Freq2 = f_cutoff; % From closed form
             disp('CUTOFF FREQ (PARAMETER TWEAKING)')
-            disp(cutoff_Freq1)
             disp(cutoff_Freq2)
         end
         cutoff_Freq = cutoff_Freq2;
