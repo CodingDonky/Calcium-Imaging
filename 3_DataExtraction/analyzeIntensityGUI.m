@@ -18,7 +18,7 @@ CoV_Threshold = 5;
 
 % Will run intensity data through a high pass filter
 High_Pass_Filter = false;
-Exponential_Fit = true;
+Exponential_Fit = false;
 
 initialTotalCells = length(intavgNPCorr(:,1));
 std_negVals = ones(initialTotalCells,1);
@@ -396,6 +396,7 @@ function Intensity_DeltaF_Plotter()
     hold off; % clear remaining figures
     clf
     inc = 1;
+    mean_intensity_ticks = zeros(numPlots, 1);
     for i=iStart:iEnd
         %%% We plot a line indicating which part of the intensity
         %%% is a cell firing
@@ -427,6 +428,8 @@ function Intensity_DeltaF_Plotter()
         %%% Plotting actual DFF, inc spaces the plots out
         plot( intensityData(firedNeurons(i),:)+(inc-1),'linewidth',1.1)
         inc = inc+1;
+        
+        mean_intensity_ticks(i) = meanIntensities(firedNeurons(i));
     end
     % done plotting data
 
@@ -476,9 +479,27 @@ function Intensity_DeltaF_Plotter()
     ax2 = axes('Position',ax1_pos,'XAxisLocation','top',...
         'YAxisLocation','right','Color','none');
     % sets the y tick labels
+    
     set(ax2,'YTick',0:1,'YTickLabel',['' ''])
+size(mean_intensity_ticks)
+disp('NEEDS FIXIN')
+    %set(ax2,'YTick',0:numPlots-1,'YTickLabel',mean_intensity_ticks)
+    
     seconds=round(length(intensityData(1,:))/3.91);
     set(ax2,'XTick',0:10,'XTickLabel',[0 seconds])
+    
+    
+    %%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    % WONT WORK
+    % Create second Y axes on the right.
+    a2 = axes('YAxisLocation', 'Right');
+    % Hide second plot.
+ %   set(a2, 'color', 'none')
+    set(a2, 'XTick', [])
+    % Set scala for second Y.
+    %set(a2, 'YLim', [20 25])
+    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     x0 = 500; y0 = 0;
     width = 800; height = 600;
