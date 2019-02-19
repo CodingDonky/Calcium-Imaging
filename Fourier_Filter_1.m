@@ -1,9 +1,9 @@
 function [ ] = Fourier_Filter_1( )
 %FILTERTESTF_GUI Summary of this function goes here
 %   Detailed explanation goes here
-plot1 = false; % Data and Hanning window
-plot2 = false; % Fourier transformed data
-plot3 = false; % Sigmoid applied to FTdata
+plot1 = true; % Data and Hanning window
+plot2 = true; % Fourier transformed data
+plot3 = true; % Sigmoid applied to FTdata
 plot4 = true;  % Filtered data
 low_pass = false;
 close all
