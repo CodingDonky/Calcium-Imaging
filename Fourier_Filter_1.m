@@ -4,7 +4,7 @@ function [ ] = Fourier_Filter_1( )
 plot1 = true; % Data and Hanning window
 plot2 = true; % Fourier transformed data
 plot3 = true; % Sigmoid applied to FTdata
-plot4 = true;  % Filtered data
+plot4 = true; % Filtered data
 low_pass = false;
 close all
 
@@ -141,7 +141,7 @@ function parameterTweaking()
         end
     else
         % Clever little way to find closest point to 0.5 in Sigmoid
-        [delta index] = min(abs(0.5-sigmoid)); % Method 1
+        %[delta index] = min(abs(0.5-sigmoid)); % Method 1
         % Closed form solution for cutoff Frequency
         %  High pass is flipped so cutoff will come from the right instead of
         %  from the left.
@@ -188,7 +188,7 @@ function inverseTransform()
     % Inverse Fourier Transform to get back filtered data
     yMir = ifft(ft_x.*sigmoidMir);
     y = yMir(tlen:2*tlen-1);
-    if true
+    if plot4
         plot(t,real(y));
         %pause(1)
         hold on
