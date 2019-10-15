@@ -20,6 +20,7 @@ percentActiveCells = totalActiveCells/totalCells;
 % Note, the following are not loaded nor necessary: amplitudes, number_of_events, firingTimes
 
 
+
 %% Quantify activity
     function[num_active_cells_in_window] = get_num_active_cells_window( window_start, window_size )
         % Returns the number of active cells in a given window
@@ -206,24 +207,157 @@ pause();
 
 
 
+
 %% Quantify synchrony
-
-function[ probability_list ] = get_probabilistic_array( )
-    
-    binaryFiring_window = binaryFiring(:,window_start:window_start+window_size);
-    num_active_cells_in_window = 0;
-    
-    for cell_i=1:totalActiveCells
-        binaryFiring_single_cell = binaryFiring_window(cell_i,:);
-        
-        firing_start_frames = get_start_firing_frames_single_cell( binaryFiring_single_cell );
-        
-            
-        for firing_start_frame_index=1:length(firing_start_frame)
-            
+    function[synchrony_array] = get_synchronous_firing_bins( )
+        % Return a NON-normalized cell array of synchronous firing
+        % synchrony_array{2}=number of times two cells fire on the same frame
+        synchrony_array = {};
+        for i=1:10
+            synchrony_array{i}=0;
         end
-end
+        firing_times = {};
+        
+        for frame=1:num_frames
+            binaryFiring_all_cells_one_frame = binaryFiring(:,frame);
+            % Summing all binaryFiring data over 1 frame gives number of
+            % cells firing at the same time
+            number_of_synchronous_cells = sum(binaryFiring_all_cells_one_frame(:) == 1);
+            if number_of_synchronous_cells~=0
+                if length(synchrony_array{number_of_synchronous_cells})==0
+                    synchrony_array{number_of_synchronous_cells} = 1;
+                else
+                    synchrony_array{number_of_synchronous_cells} = ...
+                        synchrony_array{number_of_synchronous_cells} + 1;
+                end
+            end
+        end
+    end
 
+    function[ firing_frames ] = get_start_firing_frames_single_cell( binaryFiring_single_cell )
+        firing_frames = [];
+        event_number = 1; % The event number is the index of firing_times
+        for frame=2:num_frames
+            val_at_curr_frame = binaryFiring_single_cell(frame);
+            val_at_prev_frame = binaryFiring_single_cell(frame-1);
+            % If the current frame is a start frame 
+            if val_at_curr_frame==1 && val_at_prev_frame==0
+                start_frame = frame;
+                firing_frames = [firing_frames, start_frame];
+                event_number = event_number+1;
+            end
+        end
+    end
+
+    function[num_events_in_window_per_frame] = get_synchronous_firing_bins_v2( synchrony_window_frames )
+        % Return a NON-normalized cell array of synchronous firing
+        % synchrony_array{2}=number of times two cells fire on the same frame
+        
+        firing_times = {};
+        for cell_i=1:totalActiveCells
+            binaryFiring_single_cell = binaryFiring(cell_i,:);
+            % firing_times encoded as: 
+            %  start_time_1 = firing_times(1)
+            firing_times{cell_i} = get_start_firing_frames_single_cell( binaryFiring_single_cell );
+        end
+        
+        num_events_in_window_per_frame = zeros(num_frames,1);
+        for frame=2:num_frames
+            num_events_in_window = 0;
+            for cell_i=1:synchrony_window_frames:totalActiveCells
+                firing_times_single_cell = firing_times{ cell_i };
+                
+                for firing_time_single_cell_i=1:length(firing_times_single_cell)
+                    % Find number of frames seperating `frame` and the current firing time
+                    firing_time_single_cell = firing_times_single_cell(firing_time_single_cell_i);
+                    frame_seperation = abs( firing_time_single_cell-frame );
+                    % If the firing time is close enough to the frame, it
+                    %     counts as firing in this window
+                    if frame_seperation <= synchrony_window_frames
+                        num_events_in_window = num_events_in_window + 1;
+                    end
+                end
+            end
+            num_events_in_window_per_frame(frame) = num_events_in_window;
+        end
+    end
+
+    function[num_events_in_window_per_frame] = get_synchronous_firing_bins_v3( synchrony_window_frames )
+        % Return a NON-normalized cell array of synchronous firing
+        % synchrony_array{2}=number of times two cells fire on the same frame
+        
+        firing_times = {};
+        % firing_synchrony_record contains a correspondance of firing time to number of synchronous cells
+        % Example: `firing_synchrony_record{3}==[1,2]` if the third active
+        % cell fires twice, once alone, and once synchronized with one other cell
+        firing_synchrony_record = {};
+        for cell_i=1:totalActiveCells
+            binaryFiring_single_cell = binaryFiring(cell_i,:);
+            % firing_times encoded as: 
+            %  start_time_1 = firing_times(1)
+            firing_start_times = get_start_firing_frames_single_cell( binaryFiring_single_cell );
+            firing_times{cell_i} = firing_start_times;
+            firing_synchrony_record{cell_i} = zeros(length(firing_start_times),1);
+        end
+        
+        num_events_in_window_per_frame = zeros(num_frames,1);
+        for frame=2:num_frames
+            % First need to find number of synchronous events in the window
+            num_events_in_window = 0;
+            for cell_i=1:synchrony_window_frames:totalActiveCells
+                firing_times_single_cell = firing_times{ cell_i };
+                
+                for firing_time_single_cell_i=1:length(firing_times_single_cell)
+                    % Find number of frames seperating `frame` and the current firing time
+                    firing_time_single_cell = firing_times_single_cell(firing_time_single_cell_i);
+                    frame_seperation = abs( firing_time_single_cell-frame );
+                    % If the firing time is close enough to the frame, it
+                    %     counts as firing in this window
+                    if frame_seperation <= synchrony_window_frames
+                        num_events_in_window = num_events_in_window + 1;
+                    end
+                end
+            end
+            num_events_in_window_per_frame(frame) = num_events_in_window;
+            
+            % Now, record the number of synchronous events in the window in
+            % `firing_synchrony_record`
+            for cell_i=1:synchrony_window_frames:totalActiveCells
+                firing_synchrony_record_single_cell = firing_synchrony_record{ cell_i };
+                
+                for firing_time_single_cell_i=1:length(firing_times_single_cell)
+                    % Find number of frames seperating `frame` and the current firing time
+                    firing_time_single_cell = firing_times_single_cell(firing_time_single_cell_i);
+                    frame_seperation = abs( firing_time_single_cell-frame );
+                    % If the firing time is close enough to the frame, it
+                    %     counts as firing in this window
+                    if frame_seperation <= synchrony_window_frames
+                        current_stored_val = firing_synchrony_record_single_cell{cell_i}(firing_time_single_cell_i);
+                        % Store the largest number of synchronous cells found in the sliding window. 
+                        % If the cell firing alone in one window, and firing with 2 other cells in another window, then
+                        % record as firing with 2 other cells.
+                        firing_synchrony_record_single_cell{cell_i}(firing_time_single_cell_i) ...
+                            = max( current_stored_val, num_events_in_window);
+                    end
+                end
+            end
+        end
+    end
+
+% Naive implementation, counts way too many
+% synchrony_array = get_synchronous_firing_bins_v2( 6 ); % NOT NORMALIZED
+% synchrony_list = [];
+% for num_synchronous_cells=1:length(synchrony_array)
+%     num_times_occurring = synchrony_array{num_synchronous_cells};
+%     for num_times_occurring=1:num_times_occurring
+%         synchrony_list = [synchrony_list,num_synchronous_cells];
+%     end
+% end
+% hist( synchrony_list, 5 )
+
+
+synchrony_list = get_synchronous_firing_bins_v2( 6 ); % NOT NORMALIZED
+hist( synchrony_list, 5 )
 
 title('Histogram of synchronized cell activity')
 xlabel('Simultaneous event count') 
@@ -232,6 +366,7 @@ synchrony_mean = mean(synchrony_list);
 synchrony_std = std(synchrony_list);
 fprintf('__Synchrony__\n')
 fprintf('  -  mean:%d    std:%d   \n\n',synchrony_mean,synchrony_std)
+pause();
 pause();
 
 end
